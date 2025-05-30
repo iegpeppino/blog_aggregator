@@ -21,3 +21,6 @@ SELECT * FROM users;
 
 DELETE FROM users;
 
+-- name: GetUserById :one
+SELECT * FROM users
+WHERE id = $1;

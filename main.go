@@ -19,6 +19,8 @@ type state struct {
 
 func main() {
 
+	// Reads the configuration json file to set it
+	// into the program state
 	configStruct, err := config.Read()
 	if err != nil {
 		fmt.Println("Error reading config file: ", err)
@@ -32,6 +34,8 @@ func main() {
 
 	defer db.Close()
 
+	// Create new db and predetermined queries
+	// made by sqlc
 	dbQueries := database.New(db)
 
 	programState := &state{
@@ -43,10 +47,14 @@ func main() {
 		registeredCmds: make(map[string]func(*state, command) error),
 	}
 
+	// Registering our custom CLI commands
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handleRegister)
 	cmds.register("reset", handleReset)
 	cmds.register("users", handleGetUsers)
+	cmds.register("agg", handleAgg)
+	cmds.register("addfeed", handleAddFeed)
+	cmds.register("feeds", handleFeeds)
 
 	// Checks if user enters a command followed by one or
 	// more arguments
