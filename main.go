@@ -55,6 +55,8 @@ func main() {
 	cmds.register("agg", handleAgg)
 	cmds.register("addfeed", handleAddFeed)
 	cmds.register("feeds", handleFeeds)
+	cmds.register("follow", handleFollow)
+	cmds.register("following", handleFollowing)
 
 	// Checks if user enters a command followed by one or
 	// more arguments

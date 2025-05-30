@@ -125,7 +125,8 @@ func handleAddFeed(s *state, cmd command) error {
 	if len(cmd.Args) != 2 {
 		return errors.New("invalid arguments")
 	}
-
+	feedName := cmd.Args[0]
+	feedURL := cmd.Args[1]
 	// Gets the user data from the current user
 	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
@@ -137,8 +138,8 @@ func handleAddFeed(s *state, cmd command) error {
 	feedParams := database.CreateFeedParams{
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		Name:      cmd.Args[0],
-		Url:       cmd.Args[1],
+		Name:      feedName,
+		Url:       feedURL,
 		UserID:    user.ID,
 	}
 
@@ -150,6 +151,15 @@ func handleAddFeed(s *state, cmd command) error {
 
 	fmt.Printf("Title: %v\n", rssFeed.Name)
 	fmt.Printf("URL: %v\n", rssFeed.Url)
+
+	// Calls the follow handler to follow recently
+	// created rssfeed (had to modify the args to only pass the url arg)
+
+	cmd.Args = []string{feedURL}
+	err = handleFollow(s, cmd)
+	if err != nil {
+		return fmt.Errorf("couldn't follow created feed %w", err)
+	}
 
 	return nil
 }
@@ -169,5 +179,69 @@ func handleFeeds(s *state, cmd command) error {
 		fmt.Println(feed.Url)
 		fmt.Println(user.Name)
 	}
+	return nil
+}
+
+func handleFollow(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return errors.New("invalid arguments, please provide only an url")
+	}
+
+	ctx := context.Background()
+
+	feedURL := cmd.Args[0]
+
+	// Gets the user data from the current user
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	// Query the desired feed in order to get its id
+	feed, err := s.db.GetFeedByURL(ctx, feedURL)
+	if err != nil {
+		return err
+	}
+
+	// Set feed_follow parameters
+	followParams := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	}
+
+	// Create new feed_follow record
+	_, err = s.db.CreateFeedFollow(ctx, followParams)
+	if err != nil {
+		return fmt.Errorf("couldn't create feed_follow %w", err)
+	}
+
+	fmt.Printf("User %s now follows %s ", user.Name, feedURL)
+
+	return nil
+}
+
+// Returns all followed RRSFeeds from a user
+
+func handleFollowing(s *state, cmd command) error {
+	ctx := context.Background()
+
+	user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("couldn't retrieve user data %w", err)
+	}
+
+	follows, err := s.db.GetFeedFollowsForUser(ctx, user.ID)
+	if err != nil {
+		return fmt.Errorf("couldn't get followed feeds %w", err)
+	}
+
+	fmt.Printf("User %s follows these feeds:\n", user.Name)
+	for _, follow := range follows {
+		fmt.Printf(" - %s\n", follow.FeedName)
+	}
+
 	return nil
 }
