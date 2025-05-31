@@ -58,6 +58,7 @@ func main() {
 	cmds.register("feeds", handleFeeds)
 	cmds.register("follow", middlewareLoggedIn(handleFollow))
 	cmds.register("following", middlewareLoggedIn(handleFollowing))
+	cmds.register("unfollow", middlewareLoggedIn(handleUnfollow))
 
 	// Checks if user enters a command followed by one or
 	// more arguments

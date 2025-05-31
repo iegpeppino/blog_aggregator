@@ -102,3 +102,34 @@ func handleFeeds(s *state, cmd command) error {
 
 	return nil
 }
+
+// Deletes a feed_follow record  (aka. unfollows a feed)
+func handleUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return errors.New("invalid arguments, only feed URL is required")
+	}
+
+	// Get context and feedURL
+	ctx := context.Background()
+	feedURL := cmd.Args[0]
+
+	// Get feed to access it's ID
+	feed, err := s.db.GetFeedByURL(ctx, feedURL)
+	if err != nil {
+		return err
+	}
+
+	// Set parameters for DELETE query
+	delParams := database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+
+	// Performs query
+	err = s.db.DeleteFeedFollow(ctx, delParams)
+	if err != nil {
+		return fmt.Errorf("couldn't unfollow %w", err)
+	}
+
+	return nil
+}
