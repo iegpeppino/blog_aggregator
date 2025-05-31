@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -53,10 +54,10 @@ func main() {
 	cmds.register("reset", handleReset)
 	cmds.register("users", handleGetUsers)
 	cmds.register("agg", handleAgg)
-	cmds.register("addfeed", handleAddFeed)
+	cmds.register("addfeed", middlewareLoggedIn(handleAddFeed))
 	cmds.register("feeds", handleFeeds)
-	cmds.register("follow", handleFollow)
-	cmds.register("following", handleFollowing)
+	cmds.register("follow", middlewareLoggedIn(handleFollow))
+	cmds.register("following", middlewareLoggedIn(handleFollowing))
 
 	// Checks if user enters a command followed by one or
 	// more arguments
@@ -76,4 +77,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		ctx := context.Background()
+		user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
+		if err != nil {
+			return err
+		}
+
+		return handler(s, cmd, user)
+	}
 }

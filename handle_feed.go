@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/iegpeppino/blog_aggregator/internal/database"
 )
 
@@ -28,20 +29,15 @@ func handleAgg(s *state, cmd command) error {
 }
 
 // Handles adding a new feed into db
-func handleAddFeed(s *state, cmd command) error {
+func handleAddFeed(s *state, cmd command, user database.User) error {
 
 	if len(cmd.Args) != 2 {
 		return errors.New("invalid arguments") // Needs two arguments or raises error
 	}
 
+	ctx := context.Background()
 	feedName := cmd.Args[0] // Store argument values
 	feedURL := cmd.Args[1]
-
-	// Gets the user data from the current user
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
 
 	// Set the new rssFeed parameters
 	// using the UUID from the current user (foreign key)
@@ -54,22 +50,30 @@ func handleAddFeed(s *state, cmd command) error {
 	}
 
 	// Queries the insertion of the feed item into the db
-	rssFeed, err := s.db.CreateFeed(context.Background(), feedParams)
+	rssFeed, err := s.db.CreateFeed(ctx, feedParams)
 	if err != nil {
 		return fmt.Errorf("couldn't create feed %w", err)
 	}
-
+	fmt.Println("Succesfully created new feed:")
 	fmt.Printf("Title: %v\n", rssFeed.Name)
 	fmt.Printf("URL: %v\n", rssFeed.Url)
 
-	// Calls the follow handler for the feed we've just created
-
-	cmd.Args = []string{feedURL} // Modify arguments to be able to call handleFollow
-
-	err = handleFollow(s, cmd)
-	if err != nil {
-		return fmt.Errorf("couldn't follow created feed %w", err)
+	// Creates a feed follow between the user and it's
+	// new feed
+	followParams := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    rssFeed.ID,
 	}
+
+	_, err = s.db.CreateFeedFollow(ctx, followParams)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Feed follow created succesfully!")
 
 	return nil
 }

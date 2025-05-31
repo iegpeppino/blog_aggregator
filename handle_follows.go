@@ -11,7 +11,7 @@ import (
 )
 
 // Creates a new feed_follow record
-func handleFollow(s *state, cmd command) error {
+func handleFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return errors.New("invalid arguments, please provide only an url")
 	}
@@ -19,12 +19,6 @@ func handleFollow(s *state, cmd command) error {
 	ctx := context.Background()
 
 	feedURL := cmd.Args[0]
-
-	// Gets the user data from the current user
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
 
 	// Query the desired feed in order to get its id
 	feed, err := s.db.GetFeedByURL(ctx, feedURL)
@@ -53,15 +47,9 @@ func handleFollow(s *state, cmd command) error {
 }
 
 // Returns all followed RRSFeeds from a user
-func handleFollowing(s *state, cmd command) error {
+func handleFollowing(s *state, cmd command, user database.User) error {
 
 	ctx := context.Background()
-
-	// Get currently loged in user data
-	user, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("couldn't retrieve user data %w", err)
-	}
 
 	// Get feeds followed by our user
 	follows, err := s.db.GetFeedFollowsForUser(ctx, user.ID)
