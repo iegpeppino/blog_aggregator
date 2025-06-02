@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,12 +9,11 @@ import (
 	"github.com/iegpeppino/blog_aggregator/internal/database"
 )
 
-// Logs in a user (if it exists in the users DB)
+// Logs in a user (if it exists in the users table)
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
-		return errors.New("login argument missing or multiple arguments present")
+		return fmt.Errorf("invalid argument/s\n Usage: %v <username>", cmd.Name)
 	}
-
 	userName := cmd.Args[0]
 
 	// Checking if user exists
@@ -34,10 +32,10 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
-// Inserts a new user record into users DB
+// Inserts a new user record into users table
 func handleRegister(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
-		return errors.New("register command missing an argument")
+		return fmt.Errorf("invalid argument/s\nUsage: %v <username>", cmd.Name)
 	}
 
 	userName := cmd.Args[0]
@@ -68,20 +66,7 @@ func handleRegister(s *state, cmd command) error {
 	return nil
 }
 
-// Erases all records from users DB
-func handleReset(s *state, cmd command) error {
-
-	err := s.db.ResetUsers(context.Background())
-	if err != nil {
-		return fmt.Errorf("couldn't reset database %w", err)
-	}
-
-	fmt.Println("Database succesfully reset!")
-
-	return nil
-}
-
-// Gets all users from DB and prints their names
+// Gets all users from users table and prints their names
 func handleGetUsers(s *state, cmd command) error {
 
 	// Queries all users
@@ -99,6 +84,19 @@ func handleGetUsers(s *state, cmd command) error {
 		}
 		fmt.Printf("* %v\n", user.Name)
 	}
+
+	return nil
+}
+
+// Deletes all records from users table
+func handleReset(s *state, cmd command) error {
+
+	err := s.db.ResetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't reset database %w", err)
+	}
+
+	fmt.Println("Database succesfully reset!")
 
 	return nil
 }

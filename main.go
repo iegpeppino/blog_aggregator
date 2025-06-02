@@ -49,16 +49,18 @@ func main() {
 	}
 
 	// Registering our custom CLI commands
-	cmds.register("login", handlerLogin)
-	cmds.register("register", handleRegister)
-	cmds.register("reset", handleReset)
-	cmds.register("users", handleGetUsers)
-	cmds.register("agg", handleAgg)
-	cmds.register("addfeed", middlewareLoggedIn(handleAddFeed))
-	cmds.register("feeds", handleFeeds)
-	cmds.register("follow", middlewareLoggedIn(handleFollow))
-	cmds.register("following", middlewareLoggedIn(handleFollowing))
-	cmds.register("unfollow", middlewareLoggedIn(handleUnfollow))
+
+	cmds.register("login", handlerLogin)                            // Logs in user
+	cmds.register("register", handleRegister)                       // Register new user
+	cmds.register("reset", handleReset)                             // Delete all users
+	cmds.register("users", handleGetUsers)                          // List all users
+	cmds.register("agg", handleAgg)                                 // Scrape posts from feeds
+	cmds.register("addfeed", middlewareLoggedIn(handleAddFeed))     // Insert feed to table
+	cmds.register("feeds", handleFeeds)                             // Gets all feeds and related user
+	cmds.register("follow", middlewareLoggedIn(handleFollow))       // Create follow between user and feed
+	cmds.register("following", middlewareLoggedIn(handleFollowing)) // List all followed feeds for current user
+	cmds.register("unfollow", middlewareLoggedIn(handleUnfollow))   // Deletes a followed relation between user and feed
+	cmds.register("browse", middlewareLoggedIn(handleBrowse))       // Prints posts from followed feeds
 
 	// Checks if user enters a command followed by one or
 	// more arguments

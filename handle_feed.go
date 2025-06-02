@@ -4,59 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/iegpeppino/blog_aggregator/internal/database"
 )
-
-// Handles RSSFeed get request
-func handleAgg(s *state, cmd command) error {
-	if len(cmd.Args) < 1 || len(cmd.Args) > 2 {
-		return fmt.Errorf("invalid argument, need <time_between_reqs> ")
-	}
-
-	timeBetweenReqs, err := time.ParseDuration(cmd.Args[0])
-	if err != nil {
-		return fmt.Errorf("invalid duration %w", err)
-	}
-
-	log.Printf("Fetching feeds every %s ...", timeBetweenReqs)
-
-	ticker := time.NewTicker(timeBetweenReqs)
-
-	for ; ; <-ticker.C {
-		scrapeFeeds(s)
-	}
-
-}
-
-func scrapeFeeds(s *state) {
-	ctx := context.Background()
-	feed, err := s.db.GetNextFeedToFetch(ctx)
-	if err != nil {
-		log.Println("Couldn't get next feed to fetch", err)
-		return
-	}
-
-	_, err = s.db.MarkFeedFetched(ctx, feed.ID)
-	if err != nil {
-		log.Printf("Couldn't mark feed %s as fetched %v", feed.Name, err)
-		return
-	}
-
-	feedContent, err := fetchFeed(ctx, feed.Url)
-	if err != nil {
-		log.Printf("Couldn't parse feed %s %v", feed.Name, err)
-		return
-	}
-
-	for _, item := range feedContent.Channel.Item {
-		fmt.Printf("Fetched Feed Article: %s\n", item.Title)
-	}
-
-}
 
 // Handles adding a new feed into db
 func handleAddFeed(s *state, cmd command, user database.User) error {
@@ -124,10 +76,10 @@ func handleFeeds(s *state, cmd command) error {
 		if err != nil {
 			return fmt.Errorf("couldn't get user data %w", err)
 		}
-
+		fmt.Printf("User %s's feeds:\n", user.Name)
 		fmt.Println(feed.Name) // Print results
 		fmt.Println(feed.Url)
-		fmt.Println(user.Name)
+
 	}
 
 	return nil
